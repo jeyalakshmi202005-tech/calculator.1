@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CalcPro — Professional Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f0f2f5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: background 0.3s;
+    }
+
+    body.dark {
+      background: #1a1a2e;
+    }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 0 4px;
+    }
+
+    .brand {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #185FA5;
+    }
+
+    .dark-toggle {
+      background: none;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.2s;
+    }
+
+    body.dark .dark-toggle {
+      border-color: #555;
+      color: #aaa;
+    }
+
+    .dark-toggle:hover { border-color: #185FA5; color: #185FA5; }
+
+    /* ── Calculator Shell ── */
+    .calc {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 1.5rem;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    body.dark .calc {
+      background: #16213e;
+      border-color: #2a2a4a;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    /* ── Display ── */
+    .display-wrap {
+      background: #f7f9fc;
+      border: 1px solid #e8edf3;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    body.dark .display-wrap {
+      background: #0f3460;
+      border-color: #1a4a7a;
+    }
+
+    .expr {
+      font-size: 13px;
+      color: #888;
+      min-height: 18px;
+      word-break: break-all;
+      text-align: right;
+      transition: color 0.3s;
+    }
+
+    body.dark .expr { color: #6b9bc8; }
+
+    .main-display {
+      font-size: 40px;
+      font-weight: 300;
+      color: #1a1a2e;
+      word-break: break-all;
+      text-align: right;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      transition: color 0.3s;
+    }
+
+    body.dark .main-display { color: #e8f4fd; }
+
+    /* ── Key Grid ── */
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      height: 60px;
+      border-radius: 12px;
+      border: 1px solid #e8edf3;
+      background: #ffffff;
+      color: #1a1a2e;
+      font-size: 18px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: background 0.1s, transform 0.08s, box-shadow 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      user-select: none;
+      outline: none;
+      position: relative;
+    }
+
+    body.dark .btn {
+      background: #1e2d4a;
+      border-color: #2a3d5a;
+      color: #e8f4fd;
+    }
+
+    .btn:hover {
+      background: #f0f4f8;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    body.dark .btn:hover { background: #263650; }
+
+    .btn:active { transform: scale(0.92); }
+
+    .btn:focus-visible {
+      outline: 2px solid #185FA5;
+      outline-offset: 2px;
+    }
+
+    /* Function buttons (AC, +/−, %) */
+    .btn.fn {
+      background: #eef2f7;
+      color: #444;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    body.dark .btn.fn {
+      background: #0f3460;
+      color: #9bbdd4;
+    }
+
+    .btn.fn:hover { background: #e2e8f0; }
+    body.dark .btn.fn:hover { background: #1a4a7a; }
+
+    /* Operator buttons */
+    .btn.op {
+      background: #eaf2ff;
+      color: #185FA5;
+      font-size: 22px;
+      font-weight: 500;
+      border-color: #c8dff7;
+    }
+
+    body.dark .btn.op {
+      background: #0c2d5a;
+      color: #5ba3e8;
+      border-color: #1a3d6a;
+    }
+
+    .btn.op:hover { background: #d6e9ff; }
+    body.dark .btn.op:hover { background: #163d70; }
+
+    /* Equals button */
+    .btn.eq {
+      background: #185FA5;
+      color: #ffffff;
+      border-color: #185FA5;
+      font-size: 24px;
+      font-weight: 400;
+      box-shadow: 0 4px 16px rgba(24,95,165,0.3);
+    }
+
+    .btn.eq:hover {
+      background: #0C447C;
+      box-shadow: 0 4px 20px rgba(24,95,165,0.45);
+    }
+
+    .btn.eq:active { transform: scale(0.92); }
+
+    body.dark .btn.eq {
+      background: #1a6bb5;
+      box-shadow: 0 4px 16px rgba(26,107,181,0.4);
+    }
+
+    /* Zero spans 2 columns */
+    .btn.zero { grid-column: span 2; justify-content: flex-start; padding-left: 22px; }
+
+    /* Active operator highlight */
+    .btn.op.active-op {
+      background: #185FA5;
+      color: #ffffff;
+      border-color: #185FA5;
+    }
+
+    body.dark .btn.op.active-op {
+      background: #1a6bb5;
+      color: #fff;
+    }
+
+    /* ── Keyboard Hint ── */
+    .kbd-hint {
+      text-align: center;
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 1rem;
+      letter-spacing: 0.03em;
+    }
+
+    body.dark .kbd-hint { color: #4a6a8a; }
+
+    /* ── History Panel ── */
+    .history-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 0.75rem;
+      padding: 4px 0;
+      font-family: inherit;
+      letter-spacing: 0.05em;
+    }
+
+    .history-toggle:hover { color: #185FA5; }
+
+    .history-panel {
+      width: 340px;
+      margin-top: 0.5rem;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      display: none;
+      max-height: 160px;
+      overflow-y: auto;
+      font-size: 13px;
+      color: #555;
+    }
+
+    body.dark .history-panel {
+      background: #16213e;
+      border-color: #2a2a4a;
+      color: #8aabcc;
+    }
+
+    .history-panel.open { display: block; }
+
+    .history-panel .h-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #f0f0f0;
+      text-align: right;
+    }
+
+    body.dark .history-panel .h-entry { border-color: #1e2d4a; }
+
+    .history-panel .h-entry:last-child { border-bottom: none; }
+
+    .history-panel .h-result { font-weight: 500; color: #185FA5; }
+
+    body.dark .history-panel .h-result { color: #5ba3e8; }
+
+    .clear-hist { font-size: 11px; color: #999; cursor: pointer; float: right; margin-bottom: 4px; }
+    .clear-hist:hover { color: #e24b4a; }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) {
+      .calc { width: 300px; padding: 1.25rem; }
+      .history-panel { width: 300px; }
+      .btn { height: 52px; font-size: 16px; }
+      .main-display { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="brand">CalcPro</span>
+    <button class="dark-toggle" id="darkBtn" onclick="toggleDark()">🌙 Dark Mode</button>
+  </div>
+
+  <div class="calc" id="calc" role="application" aria-label="Calculator">
+    <div class="display-wrap" aria-live="polite">
+      <div class="expr" id="expr"></div>
+      <div class="main-display" id="disp">0</div>
+    </div>
+
+    <div class="keys">
+      <!-- Row 1 -->
+      <button class="btn fn" data-action="clear" aria-label="Clear all">AC</button>
+      <button class="btn fn" data-action="sign" aria-label="Toggle sign">+/−</button>
+      <button class="btn fn" data-action="percent" aria-label="Percent">%</button>
+      <button class="btn op" data-action="op" data-val="÷" aria-label="Divide">÷</button>
+
+      <!-- Row 2 -->
+      <button class="btn" data-action="num" data-val="7">7</button>
+      <button class="btn" data-action="num" data-val="8">8</button>
+      <button class="btn" data-action="num" data-val="9">9</button>
+      <button class="btn op" data-action="op" data-val="×" aria-label="Multiply">×</button>
+
+      <!-- Row 3 -->
+      <button class="btn" data-action="num" data-val="4">4</button>
+      <button class="btn" data-action="num" data-val="5">5</button>
+      <button class="btn" data-action="num" data-val="6">6</button>
+      <button class="btn op" data-action="op" data-val="−" aria-label="Subtract">−</button>
+
+      <!-- Row 4 -->
+      <button class="btn" data-action="num" data-val="1">1</button>
+      <button class="btn" data-action="num" data-val="2">2</button>
+      <button class="btn" data-action="num" data-val="3">3</button>
+      <button class="btn op" data-action="op" data-val="+" aria-label="Add">+</button>
+
+      <!-- Row 5 -->
+      <button class="btn zero" data-action="num" data-val="0">0</button>
+      <button class="btn" data-action="dot" aria-label="Decimal point">.</button>
+      <button class="btn eq" data-action="eq" aria-label="Equals">=</button>
+    </div>
+  </div>
+
+  <button class="history-toggle" onclick="toggleHistory()">▾ Calculation History</button>
+  <div class="history-panel" id="histPanel">
+    <span class="clear-hist" onclick="clearHistory()">Clear</span>
+    <div id="histList"><em style="color:#bbb;font-size:12px;">No calculations yet.</em></div>
+  </div>
+
+  <p class="kbd-hint">⌨️ Keyboard supported &nbsp;|&nbsp; Esc = Clear &nbsp;|&nbsp; Backspace = Delete</p>
+
+<script>
+(function () {
+  let cur = '0', prev = '', op = '', fresh = false;
+  let history = [];
+
+  const disp = document.getElementById('disp');
+  const expr = document.getElementById('expr');
+
+  function fmt(v) {
+    let n = parseFloat(v);
+    if (isNaN(n)) return v;
+    let s = parseFloat(n.toPrecision(12)).toString();
+    if (s.length > 14) s = n.toExponential(6);
+    return s;
+  }
+
+  function update() {
+    disp.textContent = fmt(cur);
+  }
+
+  function compute() {
+    let a = parseFloat(prev), b = parseFloat(cur), r;
+    if (isNaN(a) || isNaN(b)) return;
+    if (op === '+')      r = a + b;
+    else if (op === '−') r = a - b;
+    else if (op === '×') r = a * b;
+    else if (op === '÷') r = b === 0 ? 'Error' : a / b;
+    let result = r === 'Error' ? 'Error' : parseFloat(r.toPrecision(12)).toString();
+
+    // Save to history
+    if (result !== 'Error') {
+      addHistory(fmt(prev) + ' ' + op + ' ' + fmt(cur) + ' = ' + fmt(result));
+    }
+
+    cur = result;
+    update();
+  }
+
+  function setOpHighlight(val) {
+    document.querySelectorAll('.btn.op').forEach(b => b.classList.remove('active-op'));
+    if (val) {
+      document.querySelectorAll('.btn.op').forEach(b => {
+        if (b.dataset.val === val) b.classList.add('active-op');
+      });
+    }
+  }
+
+  function handle(action, val) {
+    if (action === 'num') {
+      if (fresh || cur === '0' || cur === 'Error') {
+        cur = (val === '0' && (cur === '0' || fresh)) ? (cur === 'Error' ? '0' : val) : val;
+        fresh = false;
+      } else {
+        if (cur.length < 16) cur += val;
+      }
+      update();
+    } else if (action === 'dot') {
+      if (fresh) { cur = '0.'; fresh = false; }
+      else if (!cur.includes('.')) cur += '.';
+      update();
+    } else if (action === 'clear') {
+      cur = '0'; prev = ''; op = ''; fresh = false;
+      expr.textContent = '';
+      setOpHighlight(null);
+      update();
+    } else if (action === 'sign') {
+      if (cur !== '0' && cur !== 'Error') { cur = (parseFloat(cur) * -1).toString(); update(); }
+    } else if (action === 'percent') {
+      if (cur !== 'Error') { cur = (parseFloat(cur) / 100).toString(); update(); }
+    } else if (action === 'op') {
+      if (op && !fresh) { compute(); }
+      prev = cur; op = val; fresh = true;
+      expr.textContent = fmt(prev) + ' ' + op;
+      setOpHighlight(val);
+    } else if (action === 'eq') {
+      if (!op || cur === 'Error') return;
+      expr.textContent = fmt(prev) + ' ' + op + ' ' + fmt(cur) + ' =';
+      compute();
+      op = ''; prev = ''; fresh = true;
+      setOpHighlight(null);
+    }
+  }
+
+  // Button click
+  document.getElementById('calc').addEventListener('click', function (e) {
+    const b = e.target.closest('.btn');
+    if (!b) return;
+    handle(b.dataset.action, b.dataset.val);
+  });
+
+  // Keyboard support
+  const kval = { '/': '÷', '*': '×', '-': '−' };
+  document.addEventListener('keydown', function (e) {
+    const k = e.key;
+    if (k >= '0' && k <= '9') { handle('num', k); }
+    else if (k === '.') { handle('dot'); }
+    else if (k === '+') { handle('op', '+'); }
+    else if (k === '-') { handle('op', '−'); }
+    else if (k === '*') { handle('op', '×'); }
+    else if (k === '/') { e.preventDefault(); handle('op', '÷'); }
+    else if (k === 'Enter' || k === '=') { handle('eq'); }
+    else if (k === 'Backspace') {
+      if (cur === 'Error') { cur = '0'; }
+      else if (cur.length > 1) { cur = cur.slice(0, -1); if (cur === '-') cur = '0'; }
+      else { cur = '0'; }
+      update();
+    }
+    else if (k === 'Escape') { handle('clear'); }
+    else if (k === '%') { handle('percent'); }
+  });
+
+  // Dark mode
+  window.toggleDark = function () {
+    document.body.classList.toggle('dark');
+    const btn = document.getElementById('darkBtn');
+    btn.textContent = document.body.classList.contains('dark') ? '☀️ Light Mode' : '🌙 Dark Mode';
+  };
+
+  // History
+  function addHistory(entry) {
+    history.unshift(entry);
+    if (history.length > 20) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('histList');
+    if (history.length === 0) {
+      list.innerHTML = '<em style="color:#bbb;font-size:12px;">No calculations yet.</em>';
+      return;
+    }
+    list.innerHTML = history.map(h => {
+      const parts = h.split('=');
+      return `<div class="h-entry">${parts[0]}= <span class="h-result">${parts[1]}</span></div>`;
+    }).join('');
+  }
+
+  window.toggleHistory = function () {
+    document.getElementById('histPanel').classList.toggle('open');
+  };
+
+  window.clearHistory = function () {
+    history = [];
+    renderHistory();
+  };
+
+})();
+</script>
+</body>
+</html>
